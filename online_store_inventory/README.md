@@ -1,9 +1,9 @@
 
-1. Introduction
+## Introduction
 
 This API allows you to manage inventory items and suppliers for an online store. It provides endpoints for creating, updating, retrieving inventory items and suppliers, and deleting inventory items with JWT authentication for secure acces
 
-3. Installation and Setup
+## Installation and Setup
 ### Prerequisites
 - Python 3.8+
 - pip
@@ -17,7 +17,7 @@ This API allows you to manage inventory items and suppliers for an online store.
 ### Install Dependencies
 > pip install -r requirements.txt
 
-3. Running the Application
+## Running the Application
 ### Apply Migrations
 > python manage.py migrate
 ### Create a Superuser
@@ -25,10 +25,10 @@ This API allows you to manage inventory items and suppliers for an online store.
 ### Start the Development Server
 > python manage.py runserver
 
-4. API Endpoints
+## API Endpoints
 > Access API doc here : http://localhost:8000/api/schema/swagger-ui/
 
-5. Testing
+## Testing
 ### To run the tests, use the following command:
 `pytest`
 > Ensure you have the necessary configurations in pytest.ini
