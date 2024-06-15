@@ -1,8 +1,9 @@
 
 1. Introduction
+
 This API allows you to manage inventory items and suppliers for an online store. It provides endpoints for creating, updating, retrieving inventory items and suppliers, and deleting inventory items with JWT authentication for secure acces
 
-2. Installation and Setup
+3. Installation and Setup
 ### Prerequisites
 - Python 3.8+
 - pip
