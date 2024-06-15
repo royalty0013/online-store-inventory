@@ -34,6 +34,9 @@ This API allows you to manage inventory items and suppliers for an online store.
 > Ensure you have the necessary configurations in pytest.ini
 >
 > [pytest]
+> 
 > DJANGO_SETTINGS_MODULE = online_store_inventory.settings
+> 
 > python_files = tests.py test_*.py *_tests.py
+> 
 > addopts = -v
