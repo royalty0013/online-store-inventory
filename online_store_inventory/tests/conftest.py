@@ -5,7 +5,6 @@ import pytest
 from django.contrib.auth.models import User
 from dotenv import load_dotenv
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 from stores.models import InventoryItem, ItemSupplier, Supplier
 
 load_dotenv()
@@ -14,25 +13,39 @@ django.setup()
 
 
 @pytest.fixture
+def create_user_obj():
+    def _create_user(username, password):
+        User.objects.filter(username=username).delete()
+        return User.objects.create_user(username=username, password=password)
+
+    return _create_user
+
+
+@pytest.fixture
 def api_client():
     return APIClient()
 
 
 @pytest.fixture
-def auth_client(api_client):
-    user = User.objects.create_user(username="testuser", password="testpass")
-    refresh = RefreshToken.for_user(user)
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+def auth_client(api_client, create_user_obj):
+    create_user_obj("test_user", "test_pass")
+    response = api_client.post(
+        "/api/token/", {"username": "test_user", "password": "test_pass"}
+    )
+    assert response.status_code == 200
+    token = response.data["access"]
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
     return api_client
 
 
 @pytest.fixture
 def create_supplier_obj():
-    def _create_supplier(name, phone_number, address, email=None):
+    def _create_supplier(name, phone_number, address, added_by, email=None):
         return Supplier.objects.create(
             name=name,
             phone_number=phone_number,
             address=address,
+            added_by=added_by,
             email=email,
         )
 
@@ -41,9 +54,11 @@ def create_supplier_obj():
 
 @pytest.fixture
 def create_inventory_item_obj():
-    def _create_inventory_item(name, price, description, suppliers, item_suppliers=[]):
+    def _create_inventory_item(
+        name, price, description, suppliers, added_by, item_suppliers=[]
+    ):
         item = InventoryItem.objects.create(
-            name=name, price=price, description=description
+            name=name, price=price, description=description, added_by=added_by
         )
 
         for supplier in suppliers:

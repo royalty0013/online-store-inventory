@@ -5,7 +5,10 @@ from stores.models import InventoryItem, Supplier
 
 
 @pytest.mark.django_db
-def test_create_supplier(auth_client):
+def test_create_supplier(auth_client, create_user_obj):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     url = reverse("stores:suppliers-list-create")
     data = {
         "name": "a_supplier",
@@ -22,7 +25,21 @@ def test_create_supplier(auth_client):
 
 
 @pytest.mark.django_db
-def test_get_suppliers(auth_client, create_supplier_obj):
+def test_get_suppliers(auth_client, create_supplier_obj, create_user_obj):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+    create_supplier_obj(
+        "test_supplier1",
+        "0829000000",
+        "an_address1",
+        user,
+        "one@test.com",
+    )
+    create_supplier_obj("test_supplier2", "0829111111", "an_address2", user)
+
+    url = reverse("stores:suppliers-list-create")
+    response = auth_client.get(url)
+
     expected_response = [
         {
             "id": 1,
@@ -30,6 +47,8 @@ def test_get_suppliers(auth_client, create_supplier_obj):
             "phone_number": "0829000000",
             "email": "one@test.com",
             "address": "an_address1",
+            "created_at": response.data[0]["created_at"],
+            "added_by": "test_user",
         },
         {
             "id": 2,
@@ -37,46 +56,43 @@ def test_get_suppliers(auth_client, create_supplier_obj):
             "phone_number": "0829111111",
             "email": None,
             "address": "an_address2",
+            "created_at": response.data[1]["created_at"],
+            "added_by": "test_user",
         },
     ]
-    create_supplier_obj(
-        "test_supplier1",
-        "0829000000",
-        "an_address1",
-        "one@test.com",
-    )
-    create_supplier_obj("test_supplier2", "0829111111", "an_address2")
-
-    url = reverse("stores:suppliers-list-create")
-    response = auth_client.get(url)
-
     assert response.status_code == status.HTTP_200_OK
     assert response.data == expected_response
 
 
 @pytest.mark.django_db
-def test_get_single_supplier(auth_client, create_supplier_obj):
+def test_get_single_supplier(auth_client, create_supplier_obj, create_user_obj):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+    supplier = create_supplier_obj(
+        "a_supplier", "0829111111", "an_address", user, "test@test.com"
+    )
+
+    url = reverse("stores:supplier-detail", kwargs={"pk": supplier.id})
+    response = auth_client.get(url)
+
     expected_response = {
         "id": 1,
         "name": "a_supplier",
         "phone_number": "0829111111",
         "email": "test@test.com",
         "address": "an_address",
+        "created_at": response.data["created_at"],
+        "added_by": "test_user",
     }
-    supplier = create_supplier_obj(
-        "a_supplier", "0829111111", "an_address", "test@test.com"
-    )
-
-    url = reverse("stores:supplier-detail", kwargs={"pk": supplier.id})
-    response = auth_client.get(url)
-
     assert response.status_code == status.HTTP_200_OK
     assert response.data == expected_response
 
 
 @pytest.mark.django_db
-def test_update_supplier(auth_client, create_supplier_obj):
-    supplier = create_supplier_obj("a_supplier", "0829111111", "an_address")
+def test_update_supplier(auth_client, create_supplier_obj, create_user_obj):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+    supplier = create_supplier_obj("a_supplier", "0829111111", "an_address", user)
     assert supplier.email is None
 
     url = reverse("stores:supplier-detail", kwargs={"pk": supplier.id})
@@ -115,24 +131,28 @@ def test_create_supplier_with_empty_name(auth_client):
     }
 
     response = auth_client.post(url, data, format="json")
-    print(response.data["name"][0])
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "This field may not be blank." in response.data["name"][0]
 
 
 @pytest.mark.django_db
-def test_create_inventory_item(auth_client, create_supplier_obj):
+def test_create_inventory_item(auth_client, create_user_obj, create_supplier_obj):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     supplier1 = create_supplier_obj(
-        "a_supply1",
+        "a_supplier1",
         "082900000",
         "an_address",
+        user,
         "test@test.com",
     )
     supplier2 = create_supplier_obj(
-        "a_supply2",
+        "a_supplier2",
         "0829111111",
         "an_address2",
+        user,
         "test2@test.com",
     )
 
@@ -165,6 +185,7 @@ def test_create_inventory_item(auth_client, create_supplier_obj):
         "price": "245.35",
         "description": "An inventory item",
         "created_at": response.data["created_at"],
+        "added_by": "test_user",
         "suppliers": [
             {
                 "id": supplier1.id,
@@ -172,6 +193,8 @@ def test_create_inventory_item(auth_client, create_supplier_obj):
                 "phone_number": supplier1.phone_number,
                 "email": supplier1.email,
                 "address": supplier1.address,
+                "created_at": response.data["suppliers"][0]["created_at"],
+                "added_by": "test_user",
             },
             {
                 "id": supplier2.id,
@@ -179,6 +202,8 @@ def test_create_inventory_item(auth_client, create_supplier_obj):
                 "phone_number": supplier2.phone_number,
                 "email": supplier2.email,
                 "address": supplier2.address,
+                "created_at": response.data["suppliers"][1]["created_at"],
+                "added_by": "test_user",
             },
         ],
         "item_suppliers": [
@@ -207,26 +232,31 @@ def test_create_inventory_item(auth_client, create_supplier_obj):
 
 @pytest.mark.django_db
 def test_get_inventory_items(
-    auth_client, create_supplier_obj, create_inventory_item_obj
+    auth_client, create_supplier_obj, create_user_obj, create_inventory_item_obj
 ):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     supplier1 = create_supplier_obj(
-        "a_supply1",
+        "a_supplier1",
         "082900000",
         "an_address",
+        user,
         "test@test.com",
     )
     supplier2 = create_supplier_obj(
-        "a_supply2",
+        "a_supplier2",
         "0829111111",
         "an_address2",
+        user,
         "test2@test.com",
     )
 
     create_inventory_item_obj(
-        "an_inventory_item", 140.00, "a_description", [supplier1, supplier2]
+        "an_inventory_item", 140.00, "a_description", [supplier1, supplier2], user
     )
     create_inventory_item_obj(
-        "an_inventory_item1", 110.00, "a_description2", [supplier2]
+        "an_inventory_item1", 110.00, "a_description2", [supplier2], user
     )
 
     url = reverse("stores:inventory-items-list-create")
@@ -240,16 +270,20 @@ def test_get_inventory_items(
 
 @pytest.mark.django_db
 def test_get_single_inventory_item(
-    auth_client, create_supplier_obj, create_inventory_item_obj
+    auth_client, create_supplier_obj, create_user_obj, create_inventory_item_obj
 ):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     supplier = create_supplier_obj(
-        "a_supply1",
+        "a_supplier1",
         "082900000",
         "an_address",
+        user,
         "test@test.com",
     )
     item = create_inventory_item_obj(
-        "an_inventory_item", 140.00, "a_description", [supplier]
+        "an_inventory_item", 140.00, "a_description", [supplier], user
     )
 
     url = reverse("stores:inventory-item-detail", kwargs={"pk": item.id})
@@ -261,16 +295,20 @@ def test_get_single_inventory_item(
 
 @pytest.mark.django_db
 def test_update_inventory_item(
-    auth_client, create_supplier_obj, create_inventory_item_obj
+    auth_client, create_supplier_obj, create_user_obj, create_inventory_item_obj
 ):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     supplier = create_supplier_obj(
-        "a_supply1",
+        "a_supplier1",
         "082900000",
         "an_address",
+        user,
         "test@test.com",
     )
     item = create_inventory_item_obj(
-        "an_inventory_item", 140.00, "a_description", [supplier]
+        "an_inventory_item", 140.00, "a_description", [supplier], user
     )
 
     url = reverse("stores:inventory-item-detail", kwargs={"pk": item.id})
@@ -285,16 +323,20 @@ def test_update_inventory_item(
 
 @pytest.mark.django_db
 def test_partial_update_inventory_item(
-    auth_client, create_supplier_obj, create_inventory_item_obj
+    auth_client, create_supplier_obj, create_user_obj, create_inventory_item_obj
 ):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     supplier = create_supplier_obj(
-        "a_supply1",
+        "a_supplier1",
         "082900000",
         "an_address",
+        user,
         "test@test.com",
     )
     item = create_inventory_item_obj(
-        "an_inventory_item", 140.00, "a_description", [supplier]
+        "an_inventory_item", 140.00, "a_description", [supplier], user
     )
 
     url = reverse("stores:inventory-item-detail", kwargs={"pk": item.id})
@@ -308,16 +350,20 @@ def test_partial_update_inventory_item(
 
 @pytest.mark.django_db
 def test_delete_inventory_item(
-    auth_client, create_supplier_obj, create_inventory_item_obj
+    auth_client, create_supplier_obj, create_user_obj, create_inventory_item_obj
 ):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     supplier = create_supplier_obj(
-        "a_supply1",
+        "a_supplier1",
         "082900000",
         "an_address",
+        user,
         "test@test.com",
     )
     item = create_inventory_item_obj(
-        "an_inventory_item", 140.00, "a_description", [supplier]
+        "an_inventory_item", 140.00, "a_description", [supplier], user
     )
 
     url = reverse("stores:inventory-item-detail", kwargs={"pk": item.id})
@@ -329,16 +375,21 @@ def test_delete_inventory_item(
 
 @pytest.mark.django_db
 def test_create_inventory_item_with_duplicate_name(
-    auth_client, create_supplier_obj, create_inventory_item_obj
+    auth_client, create_supplier_obj, create_user_obj, create_inventory_item_obj
 ):
+    user = create_user_obj("test_user", "test_pass")
+    auth_client.force_authenticate(user=user)
+
     supplier1 = create_supplier_obj(
-        "Supplier One", "1234567890", "supplier1@example.com", "Address One"
+        "a_supplier1", "1234567890", "an_address", user, "supplier1@example.com"
     )
-    create_inventory_item_obj("Item One", "50.00", "Description One", [supplier1])
+    create_inventory_item_obj(
+        "an_inventory_item", 140.00, "a_description", [supplier1], user
+    )
 
     url = reverse("stores:inventory-items-list-create")
     data = {
-        "name": "Item One",
+        "name": "an_inventory_item",
         "price": 140.00,
         "description": "A duplicate inventory item",
         "suppliers": [supplier1.id],
