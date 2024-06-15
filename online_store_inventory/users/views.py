@@ -9,6 +9,8 @@ from users.serializers import LoginSerializer, RegistrationSerializer
 
 @method_decorator(csrf_exempt, name="dispatch")
 class RegistrationView(APIView):
+    serializer_class = RegistrationSerializer
+
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
@@ -19,6 +21,8 @@ class RegistrationView(APIView):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class LoginView(APIView):
+    serializer_class = LoginSerializer
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
