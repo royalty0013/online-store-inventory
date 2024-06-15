@@ -14,6 +14,7 @@ This API allows you to manage inventory items and suppliers for an online store.
 > cd online-store-inventory
 #### Create a Virtual Environment
 > python -m venv venv
+> 
 > source venv/bin/activate
 #### Install Dependencies
 > pip install -r requirements.txt
