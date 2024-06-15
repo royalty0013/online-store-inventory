@@ -42,9 +42,9 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "price",
             "description",
             "created_at",
+            "added_by",
             "suppliers",
             "item_suppliers",
-            "added_by",
         ]
         read_only_fields = ["added_by"]
 

@@ -159,20 +159,20 @@ def test_create_inventory_item(auth_client, create_user_obj, create_supplier_obj
     url = reverse("stores:inventory-items-list-create")
     data = {
         "name": "an_inventory_item",
-        "price": "245.35",
+        "price": 245.35,
         "description": "An inventory item",
         "suppliers": [supplier1.id, supplier2.id],
         "item_suppliers": [
             {
                 "supplier": supplier1.id,
                 "supply_date": "2024-06-01",
-                "supplier_price": "110.00",
+                "supplier_price": 110.00,
                 "quantity_supplied": 70,
             },
             {
                 "supplier": supplier2.id,
                 "supply_date": "2024-06-02",
-                "supplier_price": "120.00",
+                "supplier_price": 120.00,
                 "quantity_supplied": 40,
             },
         ],
@@ -340,7 +340,7 @@ def test_partial_update_inventory_item(
     )
 
     url = reverse("stores:inventory-item-detail", kwargs={"pk": item.id})
-    data = {"price": "150.00"}
+    data = {"price": 150.00}
     response = auth_client.put(url, data, format="json")
 
     assert response.status_code == status.HTTP_200_OK
@@ -421,9 +421,9 @@ def test_create_inventory_item_with_invalid_supplier(auth_client):
         "suppliers": [50],
         "item_suppliers": [
             {
-                "supplier": 999,
+                "supplier": 50,
                 "supply_date": "2024-06-01",
-                "supplier_price": "110.00",
+                "supplier_price": 110.00,
                 "quantity_supplied": 50,
             }
         ],
