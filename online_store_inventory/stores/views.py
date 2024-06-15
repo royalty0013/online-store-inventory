@@ -16,9 +16,9 @@ class SupplierListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = SupplierSerializer(data=request.data)
+        serializer = SupplierSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(added_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -52,10 +52,12 @@ class InventoryItemListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = InventoryItemSerializer(data=request.data)
+        serializer = InventoryItemSerializer(
+            data=request.data, context={"request": request}
+        )
         if serializer.is_valid():
             try:
-                serializer.save()
+                serializer.save(added_by=request.user)
             except ValidationError as exception_info:
                 return Response(
                     {"error": str(exception_info)}, status=status.HTTP_400_BAD_REQUEST
@@ -77,7 +79,9 @@ class InventoryItemDetailView(APIView):
 
     def put(self, request, pk):
         item = self.get_object(pk)
-        serializer = InventoryItemSerializer(item, data=request.data, partial=True)
+        serializer = InventoryItemSerializer(
+            item, data=request.data, partial=True, context={"request": request}
+        )
         if serializer.is_valid():
             try:
                 serializer.save()

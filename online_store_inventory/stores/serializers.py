@@ -7,6 +7,12 @@ class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
         fields = "__all__"
+        read_only_fields = ["added_by"]
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["added_by"] = instance.added_by.username
+        return rep
 
 
 class ItemSupplierSerializer(serializers.ModelSerializer):
@@ -38,9 +44,14 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "created_at",
             "suppliers",
             "item_suppliers",
+            "added_by",
         ]
+        read_only_fields = ["added_by"]
 
     def create(self, validated_data):
+        request = self.context.get("request", None)
+        if request is not None:
+            validated_data["added_by"] = request.user
         try:
             suppliers_data = validated_data.pop("suppliers", None)
             item_suppliers_data = validated_data.pop("item_suppliers", None)
@@ -98,4 +109,5 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["suppliers"] = SupplierSerializer(instance.suppliers.all(), many=True).data
+        rep["added_by"] = instance.added_by.username
         return rep
