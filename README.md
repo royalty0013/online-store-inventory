@@ -10,6 +10,7 @@ This API allows you to manage inventory items and suppliers for an online store.
 - Virtualenv (recommended)
 #### Clone the Repository
 > git clone https://github.com/royalty0013/online-store-inventory.git
+> 
 > cd online-store-inventory
 #### Create a Virtual Environment
 > python -m venv venv
